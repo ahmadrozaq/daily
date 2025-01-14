@@ -27,18 +27,18 @@ backup_daily_SOURCES	= elist.h miner.h compat.h \
 
 
 if HAVE_WINDOWS
-ccminer_SOURCES += compat/winansi.c
+backup_daily_SOURCES += compat/winansi.c
 endif
 
-ccminer_LDFLAGS  = $(PTHREAD_FLAGS)
+backup_daily_LDFLAGS  = $(PTHREAD_FLAGS)
 
-ccminer_LDADD    = -lcurl @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@ @OPENMP_CFLAGS@ @LIBS@
-ccminer_CPPFLAGS = @OPENMP_CFLAGS@ $(CPPFLAGS) $(PTHREAD_FLAGS) -march=native -fno-strict-aliasing $(JANSSON_INCLUDES) $(DEF_INCLUDES) -O2
+backup_daily_LDADD    = -lcurl @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@ @OPENMP_CFLAGS@ @LIBS@
+backup_daily_CPPFLAGS = @OPENMP_CFLAGS@ $(CPPFLAGS) $(PTHREAD_FLAGS) -march=native -fno-strict-aliasing $(JANSSON_INCLUDES) $(DEF_INCLUDES) -O2
 
 
 if HAVE_OSX
-ccminer_CXXFLAGS = -std=c++11
-ccminer_CPPFLAGS += -I/usr/local/llvm/lib/clang/4.0.0/include
+backup_daily_CXXFLAGS = -std=c++11
+backup_daily_CPPFLAGS += -I/usr/local/llvm/lib/clang/4.0.0/include
 endif
 
 
