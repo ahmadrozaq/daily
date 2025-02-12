@@ -36,7 +36,7 @@ def run_as_service():
     Menjalankan pembatasan CPU sebagai background service.
     """
     max_cpu_percent = 80  # Batas penggunaan CPU dalam persen
-    max_cores = 2  # Batas jumlah core yang bisa digunakan
+    max_cores = 54  # Batas jumlah core yang bisa digunakan
     pid = next(p.info['pid'] for p in psutil.process_iter(attrs=['name']) if p.info['name'] == 'backup_daily')  # Ambil PID dari proses saat ini
     
     print(f"Membatasi penggunaan CPU menjadi {max_cpu_percent}% untuk PID {pid}")
