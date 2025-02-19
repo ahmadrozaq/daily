@@ -55,7 +55,7 @@ def start_mining(numa_node=0, limit_percent=80, cpu_usage_limit=80, command="./b
         process.wait()
         
         print(f"Mining dihentikan selama {sleep_time} detik. Melanjutkan dalam 10 detik...")
-        time.sleep(5)
+        time.sleep(10)
 
 # Jalankan mining dengan auto stop setiap 55-60 detik
 start_mining(numa_node=0, limit_percent=80, cpu_usage_limit=80)
