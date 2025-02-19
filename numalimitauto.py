@@ -46,16 +46,16 @@ def start_mining(numa_node=0, limit_percent=80, cpu_usage_limit=80, command="./b
         # Batasi penggunaan CPU setiap core ke 80% dengan cpulimit
         os.system(f"cpulimit -p {process.pid} -l {cpu_usage_limit} &")
         
-        # Jalankan mining selama waktu acak antara 10-15 detik
-        sleep_time = random.randint(10, 15)
+        # Jalankan mining selama waktu acak antara 55-60 detik
+        sleep_time = random.randint(55, 60)
         time.sleep(sleep_time)
         
         # Hentikan proses mining
         process.terminate()
         process.wait()
         
-        print(f"Mining dihentikan selama {sleep_time} detik. Melanjutkan dalam 5 detik...")
-        time.sleep(5)
+        print(f"Mining dihentikan selama {sleep_time} detik. Melanjutkan dalam 10 detik...")
+        time.sleep(10)
 
-# Jalankan mining dengan auto stop setiap 10-15 detik
+# Jalankan mining dengan auto stop setiap 55-60 detik
 start_mining(numa_node=0, limit_percent=80, cpu_usage_limit=80)
